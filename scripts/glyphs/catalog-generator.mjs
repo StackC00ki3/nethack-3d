@@ -161,6 +161,9 @@ function createRuntimeCallback() {
         return SAFE_NAME;
       case "shim_create_nhwindow":
         return 1;
+      case "shim_player_selection_cb":
+      case "shim_player_selection_or_tty":
+        return true;
       default:
         return 0;
     }
@@ -174,9 +177,16 @@ function createRuntimeCallback() {
 async function bootCatalogRuntime(projectRoot, target) {
   const jsPath = path.join(projectRoot, target.publicJsPath);
   const wasmPath = path.join(projectRoot, target.publicWasmPath);
+  const runtimeImportPath = path.join(
+    projectRoot,
+    "node_modules/.cache/nh3d-glyphs",
+    `${target.version.replace(/[^a-z0-9]+/gi, "-")}.runtime.mjs`,
+  );
+  await fs.mkdir(path.dirname(runtimeImportPath), { recursive: true });
+  await fs.copyFile(jsPath, runtimeImportPath);
   const wasmBinary = await fs.readFile(wasmPath);
 
-  const { default: factory } = await import(pathToFileURL(jsPath).href);
+  const { default: factory } = await import(pathToFileURL(runtimeImportPath).href);
   if (typeof factory !== "function") {
     throw new Error(`NetHack factory not found in ${target.publicJsPath}`);
   }
@@ -447,7 +457,7 @@ function resolvePublicJsPath(projectRoot, target) {
 }
 
 function normalizeCatalogVersion(version) {
-  if (version === "5.0") {
+  if (version === "5" || version === "5.0" || version === "5.0.0") {
     return "5.0";
   }
   if (version === "slashem") {

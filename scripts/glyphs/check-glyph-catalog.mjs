@@ -6,6 +6,32 @@ import {
   resolveProjectRoot,
 } from "./catalog-generator.mjs";
 
+function normalizeRequestedVersion(value) {
+  if (value === "5" || value === "5.0" || value === "5.0.0") {
+    return "5.0";
+  }
+  return value;
+}
+
+function resolveRequestedVersions() {
+  const versions = [];
+  for (let index = 2; index < process.argv.length; index += 1) {
+    const arg = process.argv[index];
+    if (arg === "--version" || arg === "-v") {
+      const value = process.argv[index + 1];
+      if (value) {
+        versions.push(normalizeRequestedVersion(value));
+        index += 1;
+      }
+      continue;
+    }
+    if (arg.startsWith("--version=")) {
+      versions.push(normalizeRequestedVersion(arg.slice("--version=".length)));
+    }
+  }
+  return versions;
+}
+
 function resolveExpectedGlyphKinds(version) {
   const expectedKinds = [
     "mon",
@@ -76,7 +102,16 @@ function validateGeneratedSource(source, version) {
 
 async function main() {
   const projectRoot = resolveProjectRoot();
-  const targets = getGlyphCatalogTargets();
+  const requestedVersions = new Set(resolveRequestedVersions());
+  const targets = getGlyphCatalogTargets().filter(
+    (target) =>
+      requestedVersions.size === 0 || requestedVersions.has(target.version),
+  );
+  if (targets.length === 0) {
+    throw new Error(
+      `No matching glyph catalog target for version(s): ${[...requestedVersions].join(", ")}`,
+    );
+  }
 
   for (const target of targets) {
     const outputPath = getGeneratedCatalogPathForVersion(
