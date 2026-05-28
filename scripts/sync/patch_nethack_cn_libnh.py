@@ -77,7 +77,7 @@ def patch_libnhmain(source_root: Path) -> None:
 def append_exported_functions(source: str) -> str:
     lines = source.splitlines(keepends=True)
     for index, line in enumerate(lines):
-        if "-sEXPORTED_FUNCTIONS=" not in line:
+        if "EXPORTED_FUNCTIONS=" not in line:
             continue
 
         missing = [
@@ -96,7 +96,7 @@ def append_exported_functions(source: str) -> str:
         lines[index] = line[:close_bracket] + insertion + line[close_bracket:]
         return "".join(lines)
 
-    raise RuntimeError("Unable to find -sEXPORTED_FUNCTIONS in wasm hints.")
+    raise RuntimeError("Unable to find EXPORTED_FUNCTIONS in wasm hints.")
 
 
 def patch_wasm_exports(source_root: Path) -> None:
@@ -108,14 +108,14 @@ def patch_wasm_exports(source_root: Path) -> None:
             continue
 
         source = hints.read_text()
-        if "-sEXPORTED_FUNCTIONS=" not in source:
+        if "EXPORTED_FUNCTIONS=" not in source:
             continue
 
         hints.write_text(append_exported_functions(source))
         patched_any = True
 
     if not patched_any:
-        raise RuntimeError("Unable to find wasm hints with -sEXPORTED_FUNCTIONS.")
+        raise RuntimeError("Unable to find wasm hints with EXPORTED_FUNCTIONS.")
 
 
 def main() -> None:
