@@ -89,11 +89,11 @@ jobs:
             sys/unix/hints/linux.500
           cat >> sys/unix/hints/linux.500 <<'EOF'
 
-# nethack-3d reads glyph_info.tileidx at runtime; this must be present
-# before setup.sh generates the Makefiles so all objects agree on glyph_info.
-CFLAGS += -DTILES_IN_GLYPHMAP
-CPPFLAGS += -DTILES_IN_GLYPHMAP
-EOF
+          # nethack-3d reads glyph_info.tileidx at runtime; this must be present
+          # before setup.sh generates the Makefiles so all objects agree on glyph_info.
+          CFLAGS += -DTILES_IN_GLYPHMAP
+          CPPFLAGS += -DTILES_IN_GLYPHMAP
+          EOF
           grep -nE "TILES_IN_GLYPHMAP|^[[:space:]]*(CFLAGS|CPPFLAGS)[[:space:]]*[:+?]?=" sys/unix/hints/linux.500
           cd sys/unix
           ./setup.sh hints/linux.500
