@@ -8,9 +8,8 @@ import re
 from pathlib import Path
 
 
-CONFIG_GUARD_MARKER = "#define CONFIG_H\n"
-CONFIG_TILE_PATCH = """#define CONFIG_H
-
+CONFIG_GUARD_RE = r"^[ \t]*#[ \t]*define[ \t]+CONFIG_H\b[^\n]*\n"
+CONFIG_TILE_PATCH = """
 /* nethack-3d reads glyph_info.tileidx from the wasm runtime. */
 #ifndef TILES_IN_GLYPHMAP
 #define TILES_IN_GLYPHMAP
@@ -92,7 +91,10 @@ def patch_config(source_root: Path) -> None:
         source,
         re.MULTILINE,
     ):
-        source = replace_once(source, CONFIG_GUARD_MARKER, CONFIG_TILE_PATCH)
+        match = re.search(CONFIG_GUARD_RE, source, re.MULTILINE)
+        if match is None:
+            raise RuntimeError("Unable to find config.h include guard.")
+        source = source[: match.end()] + CONFIG_TILE_PATCH + source[match.end() :]
 
     config.write_text(source)
 
