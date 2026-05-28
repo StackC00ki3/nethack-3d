@@ -83,9 +83,10 @@ jobs:
           set -euo pipefail
           source "${RUNNER_TEMP}/emsdk/emsdk_env.sh"
           cd "${NETHACK_CN_DIR}"
-          sh sys/unix/setup.sh sys/unix/hints/linux.500
-          make fetch-lua
-          emmake make CROSS_TO_WASM=1 -j"$(nproc)"
+          cd sys/unix
+          ./setup.sh hints/linux.500
+          cd ../..
+          make CROSS_TO_WASM=1 all -j"$(nproc)"
           test -s targets/wasm/nethack.js
           test -s targets/wasm/nethack.wasm
           test -s src/role.c
