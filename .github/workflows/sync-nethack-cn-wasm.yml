@@ -95,6 +95,7 @@ jobs:
           make -C util tilemap
           ( cd util && ./tilemap )
           test -s src/tile.c
+          find . -name Makefile -type f -print0 | xargs -0 grep -H "tile\\.o\\|tile\\.c"
           make CROSS_TO_WASM=1 all
           test -s targets/wasm/nethack.js
           test -s targets/wasm/nethack.wasm

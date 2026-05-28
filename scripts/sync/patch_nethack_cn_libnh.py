@@ -7,6 +7,22 @@ import argparse
 from pathlib import Path
 
 
+C_MARKER = "void js_helpers_init();\nvoid js_constants_init();\nvoid js_globals_init();\n"
+C_PATCH = """void js_helpers_init();
+void js_constants_init();
+void js_globals_init();
+
+extern short glyph2tile[];
+
+EMSCRIPTEN_KEEPALIVE int
+nh3d_tileidx_for_glyph(int glyph)
+{
+    if (glyph < 0 || glyph >= MAX_GLYPH)
+        return -1;
+    return (int) glyph2tile[glyph];
+}
+"""
+
 JS_INSTALL_MARKER = 'installHelper(setPointerValue, "setPointerValue");'
 JS_INSTALL_PATCH = """installHelper(setPointerValue, "setPointerValue");
 installHelper(mapGlyphInfoHelper, "mapGlyphInfoHelper");
@@ -27,6 +43,7 @@ JS_HELPER_PATCH = """function mapGlyphInfoHelper(glyph, x = 0, y = 0, mgflags = 
         _map_glyphinfo(x, y, glyph, mgflags >>> 0, glyphInfoPtr);
 
         const ttychar = getValue(glyphInfoPtr + 4, "i32");
+        const tileidx = _nh3d_tileidx_for_glyph(glyph);
         return {
             glyph: getValue(glyphInfoPtr, "i32"),
             ch: ttychar,
@@ -37,7 +54,7 @@ JS_HELPER_PATCH = """function mapGlyphInfoHelper(glyph, x = 0, y = 0, mgflags = 
             symidx: getValue(glyphInfoPtr + 20, "i32"),
             customcolor: getValue(glyphInfoPtr + 24, "i32"),
             color256idx: getValue(glyphInfoPtr + 28, "i16"),
-            tileidx: getValue(glyphInfoPtr + 30, "i16"),
+            tileidx: tileidx >= 0 ? tileidx : getValue(glyphInfoPtr + 30, "i16"),
             x,
             y,
             mgflags,
@@ -47,12 +64,14 @@ JS_HELPER_PATCH = """function mapGlyphInfoHelper(glyph, x = 0, y = 0, mgflags = 
     }
 }
 function tileIndexForGlyph(glyph) {
-    const info = mapGlyphInfoHelper(glyph, 0, 0, 0);
-    return info ? info.tileidx : -1;
+    glyph = Math.trunc(Number(glyph));
+    if (!Number.isFinite(glyph))
+        return -1;
+    return _nh3d_tileidx_for_glyph(glyph);
 }
 // used by update_inventory"""
 
-REQUIRED_EXPORTED_FUNCTIONS = ("_free", "_map_glyphinfo")
+REQUIRED_EXPORTED_FUNCTIONS = ("_free", "_map_glyphinfo", "_nh3d_tileidx_for_glyph")
 
 
 def replace_once(source: str, marker: str, replacement: str) -> str:
@@ -64,6 +83,9 @@ def replace_once(source: str, marker: str, replacement: str) -> str:
 def patch_libnhmain(source_root: Path) -> None:
     libnhmain = source_root / "sys" / "libnh" / "libnhmain.c"
     source = libnhmain.read_text()
+
+    if "nh3d_tileidx_for_glyph" not in source:
+        source = replace_once(source, C_MARKER, C_PATCH)
 
     if 'installHelper(mapGlyphInfoHelper, "mapGlyphInfoHelper");' not in source:
         source = replace_once(source, JS_INSTALL_MARKER, JS_INSTALL_PATCH)
