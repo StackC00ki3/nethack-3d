@@ -93,7 +93,7 @@ jobs:
           make -C util tilemap
           ( cd util && ./tilemap )
           test -s src/tile.c
-          make CROSS_TO_WASM=1 all -j"$(nproc)"
+          make CROSS_TO_WASM=1 all
           test -s targets/wasm/nethack.js
           test -s targets/wasm/nethack.wasm
           test -s src/role.c
