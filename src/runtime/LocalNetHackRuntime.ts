@@ -12079,6 +12079,9 @@ class LocalNetHackRuntime {
         console.log("NetHack player selection started");
         // TO-DO: Is it OK we ignore this?
         return 0;
+      case "shim_player_selection_or_tty":
+        console.log("NetHack player selection requested");
+        return true;
       case "shim_raw_print":
         const [rawText] = args;
         const suppressLegacyContextualLookInfoRawPrint =

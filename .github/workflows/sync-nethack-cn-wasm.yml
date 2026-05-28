@@ -16,8 +16,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: sync-nethack-cn-wasm
-  cancel-in-progress: false
+  group: nethack-cn-sync-pages
+  cancel-in-progress: true
 
 jobs:
   sync-wasm:

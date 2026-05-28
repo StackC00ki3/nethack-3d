@@ -5,6 +5,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Sync NetHack-cn WASM
+    types:
+      - completed
 
 permissions:
   contents: read
@@ -12,11 +17,22 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: nethack-cn-sync-pages
+  cancel-in-progress: false
 
 jobs:
   build:
+    if: >-
+      (
+        github.event_name == 'push' &&
+        !startsWith(github.event.head_commit.message, 'Sync NetHack-cn WASM ')
+      ) ||
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
     runs-on: ubuntu-latest
     steps:
       # - name: Checkout
@@ -77,6 +93,7 @@ jobs:
 
   deploy:
     needs: build
+    if: needs.build.result == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
