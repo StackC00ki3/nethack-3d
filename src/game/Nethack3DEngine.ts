@@ -1220,6 +1220,8 @@ class Nethack3DEngine implements Nethack3DEngineController {
     RuntimeMonsterLastSeenState
   > = new Map();
   private runtimeTrackedPlayerEntitySeen: boolean = false;
+  private lastKnownPlayerAppearance: RuntimeMonsterBillboardAppearance | null =
+    null;
   private lastKnownTerrain: Map<string, TerrainSnapshot> = new Map();
   private flatFeatureUnderPlayerCache: Map<string, TerrainSnapshot> = new Map();
   private suppressedLootLikeUnderPlayerCacheKeys: Set<string> = new Set();
@@ -10572,6 +10574,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.resetPlayerStatusDeltaTracking();
     this.pendingBoulderPushDarkCorridorInference = null;
     this.fpsLastPlayerMoveFromTile = null;
+    this.lastKnownPlayerAppearance = null;
     this.updateConnectionStatus("Starting", "starting");
     this.pendingPlayerTileRefreshOnNextPosition = true;
 
@@ -12778,10 +12781,34 @@ class Nethack3DEngine implements Nethack3DEngineController {
     tileKey: string,
     tile: any,
   ): void {
+    const appearance =
+      this.extractRuntimeMonsterBillboardAppearanceFromTile(tile);
     this.runtimeMonsterLastSeenStateById.set(monsterId, {
       tileKey,
-      appearance: this.extractRuntimeMonsterBillboardAppearanceFromTile(tile),
+      appearance,
     });
+    if (monsterId === 0 && appearance) {
+      this.lastKnownPlayerAppearance = appearance;
+    }
+  }
+
+  private rememberExplicitPlayerAppearanceFromTile(tile: any): void {
+    const behavior = this.classifyTilePayload(tile);
+    if (
+      !behavior ||
+      !this.hasExplicitPlayerVisual(
+        behavior,
+        typeof tile?.char === "string" ? tile.char : null,
+      )
+    ) {
+      return;
+    }
+    const appearance =
+      this.extractRuntimeMonsterBillboardAppearanceFromTile(tile);
+    if (!appearance) {
+      return;
+    }
+    this.lastKnownPlayerAppearance = appearance;
   }
 
   private resolveRuntimeMonsterLastSeenStateById(
@@ -12807,6 +12834,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
 
     const key = `${Math.trunc(tile.x)},${Math.trunc(tile.y)}`;
     const eventMonsterId = this.normalizeRuntimeTrackedEntityId(tile.monsterId);
+    this.rememberExplicitPlayerAppearanceFromTile(tile);
     if (eventMonsterId === 0) {
       this.runtimeTrackedPlayerEntitySeen = true;
     }
@@ -12870,9 +12898,13 @@ class Nethack3DEngine implements Nethack3DEngineController {
   private resolveRuntimeMonsterBillboardAppearanceById(
     rawMonsterId: unknown,
   ): RuntimeMonsterBillboardAppearance | null {
+    const monsterId = this.normalizeRuntimeTrackedEntityId(rawMonsterId);
+    if (monsterId === null) {
+      return null;
+    }
     return (
-      this.resolveRuntimeMonsterLastSeenStateById(rawMonsterId)?.appearance ??
-      null
+      this.runtimeMonsterLastSeenStateById.get(monsterId)?.appearance ??
+      (monsterId === 0 ? this.lastKnownPlayerAppearance : null)
     );
   }
 
@@ -19981,6 +20013,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.runtimeMonsterIdByTileKey.clear();
     this.pendingRuntimeMonsterVacatedTileKeyById.clear();
     this.runtimeMonsterLastSeenStateById.clear();
+    this.lastKnownPlayerAppearance = null;
     this.clearEntityMoveTransitions();
     this.pendingPlayerFootstepSoundArmed = false;
     this.clearPlayerCliparoundInputCooldown();
@@ -23242,6 +23275,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
     this.runtimeMonsterIdByTileKey.clear();
     this.pendingRuntimeMonsterVacatedTileKeyById.clear();
     this.runtimeMonsterLastSeenStateById.clear();
+    this.lastKnownPlayerAppearance = null;
     this.clearEntityMoveTransitions();
     if (this.entityBlobShadowTexture) {
       this.entityBlobShadowTexture.dispose();
@@ -27533,6 +27567,23 @@ class Nethack3DEngine implements Nethack3DEngineController {
     };
   }
 
+  private createPlayerMoveTransitionVisualFromTileKey(
+    key: string,
+  ): EntityMoveTransitionVisual | null {
+    const mesh = this.tileMap.get(key) ?? null;
+    if (!mesh) {
+      return null;
+    }
+    const isExplicitPlayerMesh =
+      mesh.userData?.isPlayerGlyph === true ||
+      mesh.userData?.materialKind === "player" ||
+      mesh.userData?.glyphChar === "@";
+    if (!isExplicitPlayerMesh) {
+      return null;
+    }
+    return this.createEntityMoveTransitionVisualFromTileKey(key);
+  }
+
   private createEntityMoveTransitionVisualFromTileKey(
     key: string,
   ): EntityMoveTransitionVisual | null {
@@ -27988,7 +28039,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
           0,
           `${fromX},${fromY}`,
         ) ??
-        this.createEntityMoveTransitionVisualFromTileKey(`${fromX},${fromY}`),
+        this.createPlayerMoveTransitionVisualFromTileKey(`${fromX},${fromY}`),
     );
   }
 
@@ -28023,7 +28074,7 @@ class Nethack3DEngine implements Nethack3DEngineController {
           this.createEntityMoveTransitionVisualFromTrackedEntityAppearance(
             0,
             sourceKey,
-          ) ?? this.createEntityMoveTransitionVisualFromTileKey(sourceKey),
+          ) ?? this.createPlayerMoveTransitionVisualFromTileKey(sourceKey),
       );
     }
 
