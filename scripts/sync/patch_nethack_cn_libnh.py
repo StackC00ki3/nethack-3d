@@ -12,14 +12,14 @@ C_PATCH = """void js_helpers_init();
 void js_constants_init();
 void js_globals_init();
 
-extern short glyph2tile[];
+extern glyph_map glyphmap[MAX_GLYPH];
 
 EMSCRIPTEN_KEEPALIVE int
 nh3d_tileidx_for_glyph(int glyph)
 {
     if (glyph < 0 || glyph >= MAX_GLYPH)
         return -1;
-    return (int) glyph2tile[glyph];
+    return (int) glyphmap[glyph].tileidx;
 }
 """
 
@@ -86,6 +86,15 @@ def patch_libnhmain(source_root: Path) -> None:
 
     if "nh3d_tileidx_for_glyph" not in source:
         source = replace_once(source, C_MARKER, C_PATCH)
+    else:
+        source = source.replace(
+            "extern short glyph2tile[];",
+            "extern glyph_map glyphmap[MAX_GLYPH];",
+        )
+        source = source.replace(
+            "return (int) glyph2tile[glyph];",
+            "return (int) glyphmap[glyph].tileidx;",
+        )
 
     if 'installHelper(mapGlyphInfoHelper, "mapGlyphInfoHelper");' not in source:
         source = replace_once(source, JS_INSTALL_MARKER, JS_INSTALL_PATCH)
