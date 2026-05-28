@@ -72,6 +72,7 @@ function tileIndexForGlyph(glyph) {
 // used by update_inventory"""
 
 REQUIRED_EXPORTED_FUNCTIONS = ("_free", "_map_glyphinfo", "_nh3d_tileidx_for_glyph")
+WASM_TILE_FLAGS = "-DUSE_TILES -DTILES_IN_GLYPHMAP"
 
 
 def replace_once(source: str, marker: str, replacement: str) -> str:
@@ -188,6 +189,29 @@ def patch_cross_post(source_root: Path) -> None:
     cross_post.write_text(source)
 
 
+def patch_cross_pre2(source_root: Path) -> None:
+    cross_pre2 = source_root / "sys" / "unix" / "hints" / "include" / "cross-pre2.500"
+    source = cross_pre2.read_text()
+
+    wasm_start = source.find("ifdef CROSS_TO_WASM")
+    wasm_end = source.find("endif  # CROSS_TO_WASM", wasm_start)
+    if wasm_start < 0 or wasm_end < 0:
+        raise RuntimeError("Unable to find CROSS_TO_WASM section in cross-pre2.500.")
+
+    wasm_section = source[wasm_start:wasm_end]
+    if WASM_TILE_FLAGS in wasm_section:
+        return
+
+    patched_section = replace_once(
+        wasm_section,
+        "WASM_TARGET_CFLAGS = -DCROSSCOMPILE_TARGET -DCROSS_TO_WASM",
+        f"WASM_TARGET_CFLAGS = {WASM_TILE_FLAGS} -DCROSSCOMPILE_TARGET -DCROSS_TO_WASM",
+    )
+
+    source = source[:wasm_start] + patched_section + source[wasm_end:]
+    cross_pre2.write_text(source)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -200,6 +224,7 @@ def main() -> None:
     source_root = Path(args.source_root).resolve()
     patch_libnhmain(source_root)
     patch_wasm_exports(source_root)
+    patch_cross_pre2(source_root)
     patch_cross_post(source_root)
 
 
