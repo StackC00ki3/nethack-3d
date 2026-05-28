@@ -84,21 +84,11 @@ jobs:
           source "${RUNNER_TEMP}/emsdk/emsdk_env.sh"
           cd "${NETHACK_CN_DIR}"
           python3 ../scripts/sync/patch_nethack_cn_libnh.py .
-          sed -i \
-            -e 's/[[:space:]]-Werror\>//g' \
-            sys/unix/hints/linux.500
-          cat >> sys/unix/hints/linux.500 <<'EOF'
-
-          # nethack-3d reads glyph_info.tileidx at runtime; this must be present
-          # before setup.sh generates the Makefiles so all objects agree on glyph_info.
-          CFLAGS += -DTILES_IN_GLYPHMAP
-          CPPFLAGS += -DTILES_IN_GLYPHMAP
-          EOF
-          grep -nE "TILES_IN_GLYPHMAP|^[[:space:]]*(CFLAGS|CPPFLAGS)[[:space:]]*[:+?]?=" sys/unix/hints/linux.500
           cd sys/unix
           ./setup.sh hints/linux.500
           cd ../..
-          find . -name Makefile -type f -print0 | xargs -0 grep -H "TILES_IN_GLYPHMAP"
+          find . -name Makefile -type f -print0 | xargs -0 sed -i \
+            -e 's/[[:space:]]-Werror\>//g'
           make fetch-lua
           make CROSS_TO_WASM=1 all -j"$(nproc)"
           test -s targets/wasm/nethack.js
