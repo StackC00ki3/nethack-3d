@@ -88,11 +88,114 @@ jobs:
           ./setup.sh hints/linux.500
           cd ../..
           find . -name Makefile -type f -print0 | xargs -0 sed -i 's/[[:space:]]-Werror\>//g'
+          find . -name Makefile -type f -print0 | xargs -0 sh -c 'for file do printf "\nCPPFLAGS += -DTILES_IN_GLYPHMAP\nCFLAGS += -DTILES_IN_GLYPHMAP\n" >> "$file"; done' sh
           make fetch-lua
           make CROSS_TO_WASM=1 all -j"$(nproc)"
           test -s targets/wasm/nethack.js
           test -s targets/wasm/nethack.wasm
           test -s src/role.c
+
+      - name: Verify NetHack-cn tile indexes
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { pathToFileURL } from "node:url";
+
+          const sourceJs = path.resolve(
+            process.env.NETHACK_CN_DIR,
+            "targets/wasm/nethack.js",
+          );
+          const sourceWasm = path.resolve(
+            process.env.NETHACK_CN_DIR,
+            "targets/wasm/nethack.wasm",
+          );
+          const runtimeJs = path.resolve(
+            process.env.RUNNER_TEMP,
+            "nethack-cn-runtime.mjs",
+          );
+          fs.copyFileSync(sourceJs, runtimeJs);
+
+          globalThis.nethackCallback = (name) => {
+            switch (name) {
+              case "shim_get_nh_event":
+              case "shim_nhgetch":
+              case "shim_nh_poskey":
+              case "shim_yn_function":
+                return 27;
+              case "shim_select_menu":
+                return 0;
+              case "shim_getmsghistory":
+                return "";
+              case "shim_askname":
+              case "shim_getlin":
+                return "TileSmoke";
+              case "shim_create_nhwindow":
+                return 1;
+              case "shim_player_selection_cb":
+              case "shim_player_selection_or_tty":
+                return true;
+              default:
+                return 0;
+            }
+          };
+
+          const { default: factory } = await import(pathToFileURL(runtimeJs).href);
+          const Module = await factory({
+            noInitialRun: true,
+            wasmBinary: fs.readFileSync(sourceWasm),
+            locateFile: (assetPath) => assetPath,
+            print: () => {},
+            printErr: () => {},
+            preRun: [
+              (mod) => {
+                mod.ENV = mod.ENV || {};
+                mod.ENV.NETHACKOPTIONS =
+                  "autoquiver,name:TileSmoke,map_mode:tiles";
+              },
+            ],
+          });
+
+          Module.cwrap("shim_graphics_set_callback", null, ["string"])(
+            "nethackCallback",
+          );
+          try {
+            Module._main(0, 0);
+          } catch {
+            // Expected: Asyncify suspends once startup reaches input.
+          }
+
+          const helper = globalThis.nethackGlobal?.helpers?.tileIndexForGlyph;
+          if (typeof helper !== "function") {
+            throw new Error("tileIndexForGlyph helper was not installed.");
+          }
+
+          const sampleGlyphs = [0, 1, 2, 10, 100];
+          const tileIndexes = sampleGlyphs.map((glyph) => Number(helper(glyph)));
+          if (
+            tileIndexes.some((tileIndex) => !Number.isFinite(tileIndex)) ||
+            new Set(tileIndexes).size <= 1 ||
+            tileIndexes[1] === 0
+          ) {
+            throw new Error(
+              `NetHack-cn tileidx smoke test failed: ${JSON.stringify(
+                Object.fromEntries(
+                  sampleGlyphs.map((glyph, index) => [glyph, tileIndexes[index]]),
+                ),
+              )}`,
+            );
+          }
+
+          console.log(
+            `NetHack-cn tileidx smoke test passed: ${JSON.stringify(
+              Object.fromEntries(
+                sampleGlyphs.map((glyph, index) => [glyph, tileIndexes[index]]),
+              ),
+            )}`,
+          );
+          NODE
 
       - name: Copy runtime and role sources
         shell: bash
