@@ -86,7 +86,7 @@ jobs:
           cd sys/unix
           ./setup.sh hints/linux.500
           cd ../..
-          printf '\nTARGET_CFLAGS += -Wno-unused-but-set-global\n' >> src/Makefile
+          printf '\noverride CFLAGS += -Wno-unused-but-set-global\n' >> src/Makefile
           make fetch-lua
           make CROSS_TO_WASM=1 all -j"$(nproc)"
           test -s targets/wasm/nethack.js
