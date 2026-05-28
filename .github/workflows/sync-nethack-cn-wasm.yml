@@ -86,6 +86,7 @@ jobs:
           python3 ../scripts/sync/patch_nethack_cn_libnh.py .
           grep -n -C 2 "TILES_IN_GLYPHMAP" sys/unix/hints/include/cross-pre2.500
           grep -n -C 2 '$(TARGETPFX)tile.o' sys/unix/hints/include/cross-post.500
+          grep -n -C 3 "vi11ppii" win/shim/winshim.c
           cd sys/unix
           ./setup.sh hints/linux.500
           cd ../..

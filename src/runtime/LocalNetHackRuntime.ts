@@ -11770,6 +11770,20 @@ class LocalNetHackRuntime {
         // Runtime-specific shapes are validated against the pointer contract
         // before we get here; do not infer layout from arg count.
         const [printWin, x, y, a, b] = args as number[];
+        if (
+          this.runtimeVersion === "5.0" &&
+          args.length < 7 &&
+          !this.pointerContractViolationKeys.has(
+            "nh5-untracked-shim-print-glyph",
+          )
+        ) {
+          this.pointerContractViolationKeys.add(
+            "nh5-untracked-shim-print-glyph",
+          );
+          console.warn(
+            "[NH5 ABI] shim_print_glyph is still untracked: received 5 args, expected 7 args with monsterId/attackingTargetId. Rebuild nethack-5.wasm with the winshim tracked patch.",
+          );
+        }
 
         let printGlyph = a;
         // Use local names to avoid colliding with existing glyphChar/glyphColor in your file

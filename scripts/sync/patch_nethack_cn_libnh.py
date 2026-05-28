@@ -73,6 +73,52 @@ function tileIndexForGlyph(glyph) {
 
 REQUIRED_EXPORTED_FUNCTIONS = ("_free", "_map_glyphinfo", "_nh3d_tileidx_for_glyph")
 WASM_TILE_FLAGS = "-DUSE_TILES -DTILES_IN_GLYPHMAP"
+WINSHIM_PRINT_GLYPH_MARKER = (
+    'VDECLCB(shim_print_glyph,(winid w, coordxy x, coordxy y, const glyph_info *glyphinfo, const glyph_info *bkglyphinfo), "vi11pp", A2P w, A2P x, A2P y, P2V glyphinfo, P2V bkglyphinfo)'
+)
+WINSHIM_TRACKED_PRINT_GLYPH_PATCH = """#ifdef __EMSCRIPTEN__
+static int
+nh3d_shim_print_glyph_tracked_entity_id(coordxy x, coordxy y, const glyph_info *glyphinfo)
+{
+    int glyph;
+    struct monst *mon;
+
+    if (!glyphinfo)
+        return -1;
+
+    if ((glyphinfo->gm.glyphflags & MG_HERO) != 0)
+        return 0;
+
+    glyph = glyphinfo->glyph;
+    if (!isok(x, y))
+        return -1;
+
+    if (glyph_is_monster(glyph) || glyph_is_invisible(glyph)
+        || (glyphinfo->gm.glyphflags & (MG_PET | MG_RIDDEN | MG_DETECT | MG_INVIS)) != 0) {
+        mon = m_at(x, y);
+        if (mon && !DEADMONSTER(mon))
+            return (int) mon->m_id;
+    }
+
+    return -1;
+}
+
+void shim_print_glyph(winid w, coordxy x, coordxy y, const glyph_info *glyphinfo, const glyph_info *bkglyphinfo);
+void
+shim_print_glyph(winid w, coordxy x, coordxy y, const glyph_info *glyphinfo, const glyph_info *bkglyphinfo)
+{
+    int tracked_entity_id = nh3d_shim_print_glyph_tracked_entity_id(x, y, glyphinfo);
+    int attacking_target_id = -1;
+    void *args[] = { A2P w, A2P x, A2P y, P2V glyphinfo, P2V bkglyphinfo,
+                     A2P tracked_entity_id, A2P attacking_target_id };
+    debugf("SHIM GRAPHICS: shim_print_glyph\\n");
+    if (!shim_callback_name) return;
+    local_callback(shim_callback_name, "shim_print_glyph", NULL, "vi11ppii", args);
+    debugf("SHIM GRAPHICS: shim_print_glyph done.\\n");
+}
+#else
+VDECLCB(shim_print_glyph,(winid w, coordxy x, coordxy y, const glyph_info *glyphinfo, const glyph_info *bkglyphinfo), "vi11pp", A2P w, A2P x, A2P y, P2V glyphinfo, P2V bkglyphinfo)
+#endif"""
 
 
 def replace_once(source: str, marker: str, replacement: str) -> str:
@@ -212,6 +258,21 @@ def patch_cross_pre2(source_root: Path) -> None:
     cross_pre2.write_text(source)
 
 
+def patch_winshim_tracking(source_root: Path) -> None:
+    winshim = source_root / "win" / "shim" / "winshim.c"
+    source = winshim.read_text()
+
+    if "nh3d_shim_print_glyph_tracked_entity_id" in source:
+        return
+
+    source = replace_once(
+        source,
+        WINSHIM_PRINT_GLYPH_MARKER,
+        WINSHIM_TRACKED_PRINT_GLYPH_PATCH,
+    )
+    winshim.write_text(source)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -226,6 +287,7 @@ def main() -> None:
     patch_wasm_exports(source_root)
     patch_cross_pre2(source_root)
     patch_cross_post(source_root)
+    patch_winshim_tracking(source_root)
 
 
 if __name__ == "__main__":
