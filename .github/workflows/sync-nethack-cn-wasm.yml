@@ -1,0 +1,138 @@
+name: Sync NetHack-cn WASM
+
+on:
+  schedule:
+    # Daily at 04:00 Asia/Shanghai.
+    - cron: "0 20 * * *"
+  workflow_dispatch:
+    inputs:
+      nethack_ref:
+        description: "StackC00ki3/Nethack-cn ref to build."
+        required: false
+        default: "Nethack-CN-5.0.0"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-nethack-cn-wasm
+  cancel-in-progress: false
+
+jobs:
+  sync-wasm:
+    runs-on: ubuntu-latest
+    env:
+      NETHACK_CN_REPO: StackC00ki3/Nethack-cn
+      NETHACK_CN_REF: ${{ github.event.inputs.nethack_ref || 'Nethack-CN-5.0.0' }}
+      NETHACK_CN_DIR: nethack-cn
+
+    steps:
+      - name: Checkout app repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout NetHack-cn source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.NETHACK_CN_REPO }}
+          ref: ${{ env.NETHACK_CN_REF }}
+          path: ${{ env.NETHACK_CN_DIR }}
+          submodules: recursive
+
+      - name: Resolve NetHack-cn revision
+        id: nethack_cn
+        shell: bash
+        run: |
+          set -euo pipefail
+          upstream_sha="$(git -C "${NETHACK_CN_DIR}" rev-parse HEAD)"
+          upstream_short_sha="$(git -C "${NETHACK_CN_DIR}" rev-parse --short HEAD)"
+          {
+            echo "sha=${upstream_sha}"
+            echo "short_sha=${upstream_short_sha}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            bison \
+            build-essential \
+            ca-certificates \
+            curl \
+            flex \
+            gettext \
+            git \
+            python3 \
+            unzip
+
+      - name: Install Emscripten SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "${RUNNER_TEMP}/emsdk"
+          "${RUNNER_TEMP}/emsdk/emsdk" install latest
+          "${RUNNER_TEMP}/emsdk/emsdk" activate latest
+
+      - name: Build NetHack-cn WASM
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "${RUNNER_TEMP}/emsdk/emsdk_env.sh"
+          cd "${NETHACK_CN_DIR}"
+          sh sys/unix/setup.sh sys/unix/hints/linux.500
+          make fetch-lua
+          emmake make CROSS_TO_WASM=1 -j"$(nproc)"
+          test -s targets/wasm/nethack.js
+          test -s targets/wasm/nethack.wasm
+          test -s src/role.c
+
+      - name: Copy runtime and role sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${NETHACK_CN_DIR}/targets/wasm/nethack.js" public/nethack-5.js
+          cp "${NETHACK_CN_DIR}/targets/wasm/nethack.wasm" public/nethack-5.wasm
+          cp "${NETHACK_CN_DIR}/src/role.c" imported/role-sources/5.0/role.c
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Regenerate derived data
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run startup:generate-rulesets
+          npm run glyphs:generate
+          npm run startup:check-rulesets
+          npm run glyphs:check
+
+      - name: Commit synchronized artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add \
+            public/nethack-5.js \
+            public/nethack-5.wasm \
+            imported/role-sources/5.0/role.c \
+            src/game/helpers/startup-character-rulesets.generated.ts \
+            src/game/glyphs/glyph-catalog.5.generated.ts
+
+          if git diff --cached --quiet; then
+            echo "No NetHack-cn WASM changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync NetHack-cn WASM ${{ steps.nethack_cn.outputs.short_sha }}"
+          git push
