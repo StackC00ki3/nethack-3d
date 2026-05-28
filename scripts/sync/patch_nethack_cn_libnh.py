@@ -4,17 +4,8 @@
 from __future__ import annotations
 
 import argparse
-import re
 from pathlib import Path
 
-
-CONFIG_GUARD_RE = r"^[ \t]*#[ \t]*define[ \t]+CONFIG_H\b[^\n]*\n"
-CONFIG_TILE_PATCH = """
-/* nethack-3d reads glyph_info.tileidx from the wasm runtime. */
-#ifndef TILES_IN_GLYPHMAP
-#define TILES_IN_GLYPHMAP
-#endif
-"""
 
 C_MARKER = "void js_helpers_init();\nvoid js_constants_init();\nvoid js_globals_init();\n"
 C_PATCH = """void js_helpers_init();
@@ -82,23 +73,6 @@ def replace_once(source: str, marker: str, replacement: str) -> str:
     return source.replace(marker, replacement, 1)
 
 
-def patch_config(source_root: Path) -> None:
-    config = source_root / "include" / "config.h"
-    source = config.read_text()
-
-    if not re.search(
-        r"^[ \t]*#[ \t]*define[ \t]+TILES_IN_GLYPHMAP\b",
-        source,
-        re.MULTILINE,
-    ):
-        match = re.search(CONFIG_GUARD_RE, source, re.MULTILINE)
-        if match is None:
-            raise RuntimeError("Unable to find config.h include guard.")
-        source = source[: match.end()] + CONFIG_TILE_PATCH + source[match.end() :]
-
-    config.write_text(source)
-
-
 def patch_libnhmain(source_root: Path) -> None:
     libnhmain = source_root / "sys" / "libnh" / "libnhmain.c"
     source = libnhmain.read_text()
@@ -124,9 +98,7 @@ def main() -> None:
         help="Path to the checked-out NetHack-cn source tree.",
     )
     args = parser.parse_args()
-    source_root = Path(args.source_root).resolve()
-    patch_config(source_root)
-    patch_libnhmain(source_root)
+    patch_libnhmain(Path(args.source_root).resolve())
 
 
 if __name__ == "__main__":
