@@ -115,9 +115,7 @@ jobs:
         run: |
           set -euo pipefail
           npm run startup:generate-rulesets
-          npm run glyphs:generate
           npm run startup:check-rulesets
-          npm run glyphs:check
 
       - name: Commit synchronized artifacts
         shell: bash
@@ -127,8 +125,7 @@ jobs:
             public/nethack-5.js \
             public/nethack-5.wasm \
             imported/role-sources/5.0/role.c \
-            src/game/helpers/startup-character-rulesets.generated.ts \
-            src/game/glyphs/glyph-catalog.5.generated.ts
+            src/game/helpers/startup-character-rulesets.generated.ts
 
           if git diff --cached --quiet; then
             echo "No NetHack-cn WASM changes to commit."
