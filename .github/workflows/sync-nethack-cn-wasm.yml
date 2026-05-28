@@ -86,7 +86,7 @@ jobs:
           cd sys/unix
           ./setup.sh hints/linux.500
           cd ../..
-          printf '\noverride CFLAGS += -Wno-unused-but-set-global\n' >> src/Makefile
+          find . -name Makefile -type f -print0 | xargs -0 sed -i 's/[[:space:]]-Werror\>//g'
           make fetch-lua
           make CROSS_TO_WASM=1 all -j"$(nproc)"
           test -s targets/wasm/nethack.js
