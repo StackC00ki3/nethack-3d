@@ -140,6 +140,45 @@ def patch_wasm_exports(source_root: Path) -> None:
         raise RuntimeError("Unable to find wasm hints with EXPORTED_FUNCTIONS.")
 
 
+def patch_cross_post(source_root: Path) -> None:
+    cross_post = source_root / "sys" / "unix" / "hints" / "include" / "cross-post.500"
+    source = cross_post.read_text()
+    tile_object = "$(TARGETPFX)tile.o"
+
+    wasm_start = source.find("ifdef CROSS_TO_WASM")
+    wasm_end = source.find("endif  # CROSS_TO_WASM", wasm_start)
+    if wasm_start < 0 or wasm_end < 0:
+        raise RuntimeError("Unable to find CROSS_TO_WASM section in cross-post.500.")
+
+    wasm_section = source[wasm_start:wasm_end]
+    if (
+        tile_object in wasm_section
+        and f"{tile_object} : tile.c" in wasm_section
+    ):
+        return
+
+    patched_section = wasm_section
+    patched_section = replace_once(
+        patched_section,
+        "$(WASM_TARGET): pregame $(TARGET_HACKLIB) $(TARGETPFX)date.o",
+        "$(WASM_TARGET): pregame $(TARGET_HACKLIB) $(TARGETPFX)date.o $(TARGETPFX)tile.o",
+    )
+    patched_section = replace_once(
+        patched_section,
+        "$(HOBJ) $(TARGETPFX)date.o $(TARGET_HACKLIB) $(TARGET_LIBS)",
+        "$(HOBJ) $(TARGETPFX)date.o $(TARGETPFX)tile.o $(TARGET_HACKLIB) $(TARGET_LIBS)",
+    )
+    patched_section = replace_once(
+        patched_section,
+        "$(TARGETPFX)libnhmain.o : ../sys/libnh/libnhmain.c $(HACK_H)\n",
+        "$(TARGETPFX)libnhmain.o : ../sys/libnh/libnhmain.c $(HACK_H)\n"
+        "$(TARGETPFX)tile.o : tile.c\n",
+    )
+
+    source = source[:wasm_start] + patched_section + source[wasm_end:]
+    cross_post.write_text(source)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -152,6 +191,7 @@ def main() -> None:
     source_root = Path(args.source_root).resolve()
     patch_libnhmain(source_root)
     patch_wasm_exports(source_root)
+    patch_cross_post(source_root)
 
 
 if __name__ == "__main__":

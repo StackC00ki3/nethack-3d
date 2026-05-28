@@ -84,7 +84,8 @@ jobs:
           source "${RUNNER_TEMP}/emsdk/emsdk_env.sh"
           cd "${NETHACK_CN_DIR}"
           python3 ../scripts/sync/patch_nethack_cn_libnh.py .
-          sed -i '/^[[:space:]]*NHCFLAGS+=/a NHCFLAGS+=-DTILES_IN_GLYPHMAP' sys/unix/hints/linux.500
+          grep -n -C 2 '$(TARGETPFX)tile.o' sys/unix/hints/include/cross-post.500
+          sed -i '/^[[:space:]]*NHCFLAGS+=/a NHCFLAGS+=-DUSE_TILES -DTILES_IN_GLYPHMAP' sys/unix/hints/linux.500
           grep -n -C 2 "TILES_IN_GLYPHMAP" sys/unix/hints/linux.500
           cd sys/unix
           ./setup.sh hints/linux.500
@@ -95,7 +96,6 @@ jobs:
           make -C util tilemap
           ( cd util && ./tilemap )
           test -s src/tile.c
-          find . -name Makefile -type f -print0 | xargs -0 grep -H "tile\\.o\\|tile\\.c"
           make CROSS_TO_WASM=1 all
           test -s targets/wasm/nethack.js
           test -s targets/wasm/nethack.wasm
