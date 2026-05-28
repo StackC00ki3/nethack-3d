@@ -73,6 +73,36 @@ function tileIndexForGlyph(glyph) {
 
 REQUIRED_EXPORTED_FUNCTIONS = ("_free", "_map_glyphinfo", "_nh3d_tileidx_for_glyph")
 WASM_TILE_FLAGS = "-DUSE_TILES -DTILES_IN_GLYPHMAP"
+LEVEL_IDENTITY_GLOBALS_MARKER = '    CREATE_GLOBAL(flags.time, "b");\n'
+LEVEL_IDENTITY_GLOBALS_PATCH = """    CREATE_GLOBAL(flags.time, "b");
+
+    /* level identity globals consumed by the web runtime */
+    CREATE_GLOBAL(u.uz.dnum, "1");
+    CREATE_GLOBAL(u.uz.dlevel, "1");
+    {
+        int i;
+        char buf[BUFSZ];
+
+        for (i = 0; i < MAXDUNGEON; i++) {
+            snprintf(buf, BUFSZ, "dungeons.%d.dname", i);
+            create_global(buf, (void *) &(svd.dungeons[i].dname), "s");
+            snprintf(buf, BUFSZ, "dungeons.%d.ledger_start", i);
+            create_global(buf, (void *) &(svd.dungeons[i].ledger_start), "i");
+            snprintf(buf, BUFSZ, "dungeons.%d.depth_start", i);
+            create_global(buf, (void *) &(svd.dungeons[i].depth_start), "i");
+        }
+    }
+    CREATE_GLOBAL(svd.dungeon_topology.d_mines_dnum, "1");
+    CREATE_GLOBAL(svd.dungeon_topology.d_quest_dnum, "1");
+    CREATE_GLOBAL(svd.dungeon_topology.d_sokoban_dnum, "1");
+    CREATE_GLOBAL(svd.dungeon_topology.d_tower_dnum, "1");
+    create_global("dungeon_topology.d_mines_dnum", (void *) &(svd.dungeon_topology.d_mines_dnum), "1");
+    create_global("dungeon_topology.d_quest_dnum", (void *) &(svd.dungeon_topology.d_quest_dnum), "1");
+    create_global("dungeon_topology.d_sokoban_dnum", (void *) &(svd.dungeon_topology.d_sokoban_dnum), "1");
+    create_global("dungeon_topology.d_tower_dnum", (void *) &(svd.dungeon_topology.d_tower_dnum), "1");
+    create_global("dungeon_topology.d_astral_level.dnum", (void *) &(svd.dungeon_topology.d_astral_level.dnum), "1");
+    create_global("dungeon_topology.d_astral_level.dlevel", (void *) &(svd.dungeon_topology.d_astral_level.dlevel), "1");
+"""
 WINSHIM_PRINT_GLYPH_MARKER = (
     'VDECLCB(shim_print_glyph,(winid w, coordxy x, coordxy y, const glyph_info *glyphinfo, const glyph_info *bkglyphinfo), "vi11pp", A2P w, A2P x, A2P y, P2V glyphinfo, P2V bkglyphinfo)'
 )
@@ -148,6 +178,13 @@ def patch_libnhmain(source_root: Path) -> None:
 
     if "function mapGlyphInfoHelper(glyph" not in source:
         source = replace_once(source, JS_HELPER_MARKER, JS_HELPER_PATCH)
+
+    if "level identity globals consumed by the web runtime" not in source:
+        source = replace_once(
+            source,
+            LEVEL_IDENTITY_GLOBALS_MARKER,
+            LEVEL_IDENTITY_GLOBALS_PATCH,
+        )
 
     libnhmain.write_text(source)
 

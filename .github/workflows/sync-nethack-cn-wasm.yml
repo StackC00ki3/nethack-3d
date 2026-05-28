@@ -87,6 +87,7 @@ jobs:
           grep -n -C 2 "TILES_IN_GLYPHMAP" sys/unix/hints/include/cross-pre2.500
           grep -n -C 2 '$(TARGETPFX)tile.o' sys/unix/hints/include/cross-post.500
           grep -n -C 3 "vi11ppii" win/shim/winshim.c
+          grep -n -C 3 "level identity globals" sys/libnh/libnhmain.c
           cd sys/unix
           ./setup.sh hints/linux.500
           cd ../..
