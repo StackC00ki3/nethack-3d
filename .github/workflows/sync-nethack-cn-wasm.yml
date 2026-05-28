@@ -87,8 +87,7 @@ jobs:
           cd sys/unix
           ./setup.sh hints/linux.500
           cd ../..
-          find . -name Makefile -type f -print0 | xargs -0 sed -i 's/[[:space:]]-Werror\>//g'
-          find . -name Makefile -type f -print0 | xargs -0 sh -c 'for file do printf "\nCPPFLAGS += -DTILES_IN_GLYPHMAP\nCFLAGS += -DTILES_IN_GLYPHMAP\n" >> "$file"; done' sh
+          find . -name Makefile -type f -print0 | xargs -0 sed -i 's/[[:space:]]-Werror\>/ -DTILES_IN_GLYPHMAP/g'
           make fetch-lua
           make CROSS_TO_WASM=1 all -j"$(nproc)"
           test -s targets/wasm/nethack.js
