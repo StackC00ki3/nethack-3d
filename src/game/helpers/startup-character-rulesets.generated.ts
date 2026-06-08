@@ -21,6 +21,19 @@ export const GENERATED_STARTUP_ROLE_OPTIONS = [
   "Tourist",
   "Valkyrie",
   "Wizard",
+  "考古学家",
+  "野蛮人",
+  "穴居人",
+  "治疗师",
+  "骑士",
+  "武僧",
+  "祭司",
+  "盗贼",
+  "游侠",
+  "武士",
+  "游客",
+  "女武神",
+  "巫师",
   "Flame Mage",
   "Ice Mage",
   "Necromancer",
@@ -34,6 +47,11 @@ export const GENERATED_STARTUP_RACE_OPTIONS = [
   "dwarf",
   "gnome",
   "orc",
+  "人类",
+  "精灵",
+  "矮人",
+  "侏儒",
+  "兽人",
   "doppelganger",
   "drow",
   "hobbit",
@@ -299,33 +317,33 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
   },
   "5.0": {
     "roles": [
-      "Archeologist",
-      "Barbarian",
-      "Caveman",
-      "Healer",
-      "Knight",
-      "Monk",
-      "Priest",
-      "Rogue",
-      "Ranger",
-      "Samurai",
-      "Tourist",
-      "Valkyrie",
-      "Wizard"
+      "考古学家",
+      "野蛮人",
+      "穴居人",
+      "治疗师",
+      "骑士",
+      "武僧",
+      "祭司",
+      "盗贼",
+      "游侠",
+      "武士",
+      "游客",
+      "女武神",
+      "巫师"
     ],
     "races": [
-      "human",
-      "elf",
-      "dwarf",
-      "gnome",
-      "orc"
+      "人类",
+      "精灵",
+      "矮人",
+      "侏儒",
+      "兽人"
     ],
     "roleConstraints": {
-      "Archeologist": {
+      "考古学家": {
         "races": [
-          "human",
-          "dwarf",
-          "gnome"
+          "人类",
+          "矮人",
+          "侏儒"
         ],
         "genders": [
           "male",
@@ -336,10 +354,10 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "neutral"
         ]
       },
-      "Barbarian": {
+      "野蛮人": {
         "races": [
-          "human",
-          "orc"
+          "人类",
+          "兽人"
         ],
         "genders": [
           "male",
@@ -350,11 +368,11 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "chaotic"
         ]
       },
-      "Caveman": {
+      "穴居人": {
         "races": [
-          "human",
-          "dwarf",
-          "gnome"
+          "人类",
+          "矮人",
+          "侏儒"
         ],
         "genders": [
           "male",
@@ -365,10 +383,10 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "neutral"
         ]
       },
-      "Healer": {
+      "治疗师": {
         "races": [
-          "human",
-          "gnome"
+          "人类",
+          "侏儒"
         ],
         "genders": [
           "male",
@@ -378,9 +396,9 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "neutral"
         ]
       },
-      "Knight": {
+      "骑士": {
         "races": [
-          "human"
+          "人类"
         ],
         "genders": [
           "male",
@@ -390,9 +408,9 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "lawful"
         ]
       },
-      "Monk": {
+      "武僧": {
         "races": [
-          "human"
+          "人类"
         ],
         "genders": [
           "male",
@@ -404,10 +422,10 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "chaotic"
         ]
       },
-      "Priest": {
+      "祭司": {
         "races": [
-          "human",
-          "elf"
+          "人类",
+          "精灵"
         ],
         "genders": [
           "male",
@@ -419,10 +437,10 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "chaotic"
         ]
       },
-      "Rogue": {
+      "盗贼": {
         "races": [
-          "human",
-          "orc"
+          "人类",
+          "兽人"
         ],
         "genders": [
           "male",
@@ -432,12 +450,12 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "chaotic"
         ]
       },
-      "Ranger": {
+      "游侠": {
         "races": [
-          "human",
-          "elf",
-          "gnome",
-          "orc"
+          "人类",
+          "精灵",
+          "侏儒",
+          "兽人"
         ],
         "genders": [
           "male",
@@ -448,9 +466,9 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "chaotic"
         ]
       },
-      "Samurai": {
+      "武士": {
         "races": [
-          "human"
+          "人类"
         ],
         "genders": [
           "male",
@@ -460,9 +478,9 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "lawful"
         ]
       },
-      "Tourist": {
+      "游客": {
         "races": [
-          "human"
+          "人类"
         ],
         "genders": [
           "male",
@@ -472,10 +490,10 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "neutral"
         ]
       },
-      "Valkyrie": {
+      "女武神": {
         "races": [
-          "human",
-          "dwarf"
+          "人类",
+          "矮人"
         ],
         "genders": [
           "female"
@@ -485,12 +503,12 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "neutral"
         ]
       },
-      "Wizard": {
+      "巫师": {
         "races": [
-          "human",
-          "elf",
-          "gnome",
-          "orc"
+          "人类",
+          "精灵",
+          "侏儒",
+          "兽人"
         ],
         "genders": [
           "male",
@@ -503,7 +521,7 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
       }
     },
     "raceConstraints": {
-      "human": {
+      "人类": {
         "genders": [
           "male",
           "female"
@@ -514,7 +532,7 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "chaotic"
         ]
       },
-      "elf": {
+      "精灵": {
         "genders": [
           "male",
           "female"
@@ -523,7 +541,7 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "chaotic"
         ]
       },
-      "dwarf": {
+      "矮人": {
         "genders": [
           "male",
           "female"
@@ -532,7 +550,7 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "lawful"
         ]
       },
-      "gnome": {
+      "侏儒": {
         "genders": [
           "male",
           "female"
@@ -541,7 +559,7 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "neutral"
         ]
       },
-      "orc": {
+      "兽人": {
         "genders": [
           "male",
           "female"
