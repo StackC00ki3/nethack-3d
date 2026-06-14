@@ -275,7 +275,7 @@ const struct Role roles[NUM_ROLES+1] = {
       SPE_RESTORE_ABILITY,
       -4 },
     { { "祭司", 0 },
-      { { "求道者", 0 },
+      { { "修道者", 0 },
         { "教士助手", 0 },
         { "熟练助手", 0 },
         { "祭司", 0 },
@@ -542,7 +542,7 @@ const struct Role roles[NUM_ROLES+1] = {
         { "妖术师", 0 },
         { "大魔法师", 0 },
         { "智者", 0 } },
-      "普塔", "托特", "安胡尔", /* Egyptian */ /*待写:或者是荷鲁斯？*/
+      "普塔", "托特", "安赫", /* Egyptian */ /*待写:或者是荷鲁斯？安赫？*/
       "巫",
       "孤独之塔",
       "黑暗之塔",
@@ -697,7 +697,7 @@ const struct Gender genders[] = {
 
 /* Table of all alignments */
 const struct Align aligns[] = {
-    { "守序", "守序", "守", ROLE_LAWFUL, A_LAWFUL },
+    { "秩序", "秩序", "秩", ROLE_LAWFUL, A_LAWFUL },
     { "中立", "中立", "中", ROLE_NEUTRAL, A_NEUTRAL },
     { "混沌", "混沌", "混", ROLE_CHAOTIC, A_CHAOTIC },
     { "邪恶", "无阵营", "无", 0, A_NONE }
@@ -1785,7 +1785,7 @@ role_selection_prolog(int which, winid where)
         /* distinct female name [caveman/cavewoman, priest/priestess] */
         if (gend == 1)
             /* female specified; replace male role name with female one */
-            Sprintf(strchr(buf, ':'), ": %s", roles[r].name.f);
+            Sprintf(strchr(buf, ':'), ":%s", roles[r].name.f);
         else if (gend < 0)
             /* gender unspecified; append slash and female role name */
             Sprintf(eos(buf), "/%s", roles[r].name.f);
@@ -2659,14 +2659,14 @@ genl_player_setup(int screenheight)
         /* [ynaq] menu choices */
         any.a_int = 1;
         add_menu(win, &nul_glyphinfo, &any, 'y', 0,
-                 ATR_NONE, clr, "是;开始游戏", MENU_ITEMFLAGS_SELECTED);
+                 ATR_NONE, clr, "是; 开始游戏", MENU_ITEMFLAGS_SELECTED);
         any.a_int = 2;
         add_menu(win, &nul_glyphinfo, &any, 'n', 0,
-                 ATR_NONE, clr, "否;重新选择角色", MENU_ITEMFLAGS_NONE);
+                 ATR_NONE, clr, "否; 重新选择角色", MENU_ITEMFLAGS_NONE);
         if (iflags.renameallowed) {
             any.a_int = 3;
             add_menu(win, &nul_glyphinfo, &any, 'a', 0, ATR_NONE,
-                     clr, "尚未;选择另一个名字",
+                     clr, "尚未; 选择另一个名字",
                      MENU_ITEMFLAGS_NONE);
         }
         any.a_int = -1;
@@ -2878,6 +2878,7 @@ setup_rolemenu(
             any.a_int = i + 1;
         else
             any.a_string = roles[i].name.m;
+            thisch = '\0';
         /*危险，冗余:thisch = lowc(*roles[i].name.m);*/
         /*危险，冗余:if (thisch == lastch)
             thisch = highc(thisch);*/
