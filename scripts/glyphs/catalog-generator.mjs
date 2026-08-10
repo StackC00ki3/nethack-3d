@@ -199,7 +199,10 @@ async function bootCatalogRuntime(projectRoot, target) {
   const Module = await factory({
     noInitialRun: true,
     wasmBinary,
-    locateFile: (assetPath) => assetPath,
+    // Newer Emscripten builds may omit wasmBinary from the incoming module API,
+    // so keep the sidecar lookup valid when the runtime falls back to locateFile.
+    locateFile: (assetPath) =>
+      assetPath.endsWith(".wasm") ? wasmPath : assetPath,
     print: () => {},
     printErr: () => {},
     preRun: [

@@ -1,9 +1,6 @@
 name: Sync NetHack-cn WASM
 
 on:
-  schedule:
-    # Daily at 04:00 Asia/Shanghai.
-    - cron: "0 20 * * *"
   workflow_dispatch:
     inputs:
       nethack_ref:
