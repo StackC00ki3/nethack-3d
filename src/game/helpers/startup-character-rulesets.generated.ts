@@ -24,10 +24,10 @@ export const GENERATED_STARTUP_ROLE_OPTIONS = [
   "考古学家",
   "野蛮人",
   "穴居人",
-  "治疗师",
+  "医生",
   "骑士",
   "武僧",
-  "祭司",
+  "牧师",
   "盗贼",
   "游侠",
   "武士",
@@ -320,10 +320,10 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
       "考古学家",
       "野蛮人",
       "穴居人",
-      "治疗师",
+      "医生",
       "骑士",
       "武僧",
-      "祭司",
+      "牧师",
       "盗贼",
       "游侠",
       "武士",
@@ -383,7 +383,7 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "neutral"
         ]
       },
-      "治疗师": {
+      "医生": {
         "races": [
           "人类",
           "侏儒"
@@ -422,7 +422,7 @@ export const GENERATED_STARTUP_CHARACTER_RULESETS = {
           "chaotic"
         ]
       },
-      "祭司": {
+      "牧师": {
         "races": [
           "人类",
           "精灵"
